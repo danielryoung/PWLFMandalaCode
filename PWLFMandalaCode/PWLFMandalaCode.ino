@@ -107,7 +107,6 @@ void ledFrameLoop();
 void startAmbient();
 void stopPiezo();
 
-void triggerLoop(); // hoisted, defined below.
 // Ticker Library sets up timers and a function to call when the timer elapses
            //(functioncalled, timertime, number to repeat(0is forever, RESOLUTION)
 Ticker repeatTimer(triggerLoop, TRIGGER_DURATION, 0, MILLIS);
@@ -155,21 +154,23 @@ void setup() {
     Serial.println("MPR121 0x5A not found, check wiring?");
     while (1); 
   }
- // Serial.println("MPR121 found!");
- // if (!capB.begin(0x5B)) {
- //   Serial.println("MPR121 0x5B not found, check wiring?");
-//    while (1);
- // }
- // Serial.println("MPR121 0x5B found!");
+  Serial.println("MPR121 found!");
+  
+  if (!capB.begin(0x5B)) {
+    Serial.println("MPR121 0x5B not found, check wiring?");
+   while (1);
+  }
+  Serial.println("MPR121 0x5B found!");
 
-//from drum code.  not sure if its even necessary
+  //from drum code.  not sure if its even necessary
   while (!Serial && millis() < 2500) /* wait for serial monitor */ ;
   Serial.println("Piezo Peak Capture");  
 
   if (USE_CC_TIMER)
-{
-  repeatTimer.start();
-}
+  {
+    repeatTimer.start();
+  }
+  
   ledFrameTimer.start();
 
     // tell FastLED about the LED strip configuration
