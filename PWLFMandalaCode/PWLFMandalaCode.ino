@@ -227,7 +227,10 @@ while (usbMIDI.read()) { } // ignore incoming messages??
     }
   // key repeat timer
 
-  repeatTimer.update();
+
+   // if (USE_CC_TIMER) {
+   // repeatTimer.update();
+  //}
 
   // led frame render timer
   ledFrameTimer.update();
