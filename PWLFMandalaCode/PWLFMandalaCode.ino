@@ -65,6 +65,9 @@ const int aftershockMillis = 60; // time of aftershocks & vibration
 //This is the duration between sends of midi signal in Milliseconds.
 #define TRIGGER_DURATION 30
 
+#define USE_CC_TIMER 0
+#define USE_NOTE_ON_OFF 1
+
 // LED Stuff
 #define DATA_PIN    3
 #define LED_TYPE    WS2812
@@ -152,20 +155,21 @@ void setup() {
     Serial.println("MPR121 0x5A not found, check wiring?");
     while (1); 
   }
-  Serial.println("MPR121 found!");
-  if (!capB.begin(0x5B)) {
-    Serial.println("MPR121 0x5B not found, check wiring?");
-    while (1);
-  }
-  Serial.println("MPR121 0x5B found!");
-  
-repeatTimer.start();
+ // Serial.println("MPR121 found!");
+ // if (!capB.begin(0x5B)) {
+ //   Serial.println("MPR121 0x5B not found, check wiring?");
+//    while (1);
+ // }
+ // Serial.println("MPR121 0x5B found!");
 
 //from drum code.  not sure if its even necessary
   while (!Serial && millis() < 2500) /* wait for serial monitor */ ;
   Serial.println("Piezo Peak Capture");  
 
+  if (USE_CC_TIMER)
+{
   repeatTimer.start();
+}
   ledFrameTimer.start();
 
     // tell FastLED about the LED strip configuration
@@ -221,6 +225,7 @@ while (usbMIDI.read()) { } // ignore incoming messages??
       }
     }
   // key repeat timer
+
   repeatTimer.update();
 
   // led frame render timer
@@ -235,9 +240,12 @@ while (usbMIDI.read()) { } // ignore incoming messages??
 
   // Get the currently touched pads
   currtouchedA = capA.touched();
-  currtouchedB = capB.touched();
+  currtouchedB = 0;
+  //capB.touched();
 
-  repeatTimer.update();
+  if (USE_CC_TIMER) {
+    repeatTimer.update();
+  }
   // timer is runnig as long as this is getting called.
   checkElectrodes();
 }
@@ -251,7 +259,9 @@ void checkElectrodes(){
       //Serial.print(i); Serial.println(" touched of A");
       // set the array value to 1 on touch
       ElectrodeTouchedA[i] = 1;
-
+      if (USE_NOTE_ON_OFF){
+        usbMIDI.sendNoteOn(notes[i], 127, channel); // note, velocity, channel
+      }
       // on touch, turn off ambient leds and turn on trigger_leds
       ambient_leds = false;
       trigger_leds = true;
@@ -264,7 +274,9 @@ void checkElectrodes(){
       //Serial.print(i); Serial.println(" released of A");
       // set it back to 0 on release
       ElectrodeTouchedA[i] = 0;  
-
+      if (USE_NOTE_ON_OFF){
+        usbMIDI.sendNoteOff(notes[i], 127, channel); // note, velocity, channel
+      }
       trigger_leds = false;
       ambient_leds = false;
       ambientLEDs.start();
