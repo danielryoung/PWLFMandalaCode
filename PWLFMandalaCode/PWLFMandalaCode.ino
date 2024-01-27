@@ -155,13 +155,13 @@ void setup() {
     Serial.println("MPR121 0x5A not found, check wiring?");
     while (1); 
   }
-  Serial.println("MPR121 found!");
+  Serial.println("MPR121 0x5A found!");
   
-  //if (!capB.begin(0x5B)) {
-   // Serial.println("MPR121 0x5B not found, check wiring?");
-  // while (1);
-  //}
-  //Serial.println("MPR121 0x5B found!");
+  if (!capB.begin(0x5B)) {
+    Serial.println("MPR121 0x5B not found, check wiring?");
+   while (1);
+  }
+  Serial.println("MPR121 0x5B found!");
 
   //from drum code.  not sure if its even necessary
   while (!Serial && millis() < 2500) /* wait for serial monitor */ ;
@@ -182,66 +182,14 @@ void setup() {
 
 void loop() {
 
-//drum stuff
-while (usbMIDI.read()) { } // ignore incoming messages??
-  for (uint8_t x=0; x<numDrumPins; x++) { //changed i<0 to i<numElectrodes
-    int value = analogRead(drumPins[x]);
+  //drum stuff
+  while (usbMIDI.read()) { } // ignore incoming messages??
 
-    if (state[x] == 0) {
-      // IDLE state: if any reading is above a threshold, begin peak
-      if (value > thresholdMin) {
-        //Serial.println("begin state 1");
-        state[x] = 1;
-        peak[x] = value;
-        msec[x] = 0;
-      }
-    } else if (state[x] == 1) {
-      // Peak Tracking state: for 10 ms, capture largest reading
-      if (value > peak[x]) {
-        peak[x] = value;
-      }
-      if (msec[x] >= 10) {
-        Serial.print("peak = ");
-        Serial.println(peak[x]);
-        trigger_leds = true;
-        ambient_leds = false;
-        PiezoEffect.interval(peak[x]*10);
-        //starts the piezo decay timer and the timer to start ambient after no action
-        PiezoEffect.start();
-        ambientLEDs.start(); 
-        
-        //Serial.println("begin state 2");
-        int velocity = map(peak[x], thresholdMin, 1023, 1, 127);
-        usbMIDI.sendNoteOn(drumNotes[x], velocity, channel);
-        state[x] = 2;
-        msec[x] = 0;
-      }
-    } else {
-      // Ignore Aftershock state: wait for things to be quiet again
-      if (value > thresholdMin) {
-        msec[x] = 0; // keep resetting timer if above threshold
-      } else if (msec[x] > 30) {
-        //Serial.println("begin state 0");
-        usbMIDI.sendNoteOff(drumNotes[x], 0, channel);
-        state[x] = 0; // go back to idle after 30 ms below threshold
-      }
-    }
-    // key repeat timer
-
-
-    // if (USE_CC_TIMER) {
-    // repeatTimer.update();
-    //}
-
-    // led frame render timer
-    ledFrameTimer.update();
-
-    // turn on ambient LEDs timer
-    ambientLEDs.update();
-    FastLED.show(); 
-    PiezoEffect.update();
-
-  } 
+  // led frame render timer
+  ledFrameTimer.update();
+  
+  // turn on ambient LEDs timer
+  ambientLEDs.update();
 
   // Get the currently touched pads
   currtouchedA = capA.touched();
@@ -252,6 +200,8 @@ while (usbMIDI.read()) { } // ignore incoming messages??
   }
   // timer is runnig as long as this is getting called.
   checkElectrodes();
+  
+  FastLED.show(); 
 }
 
 void checkElectrodes(){
@@ -261,6 +211,7 @@ void checkElectrodes(){
     if ((currtouchedA & _BV(i)) && !(lasttouchedA & _BV(i)) ) {
       digitalWrite (LED_BUILTIN, HIGH); //added by drc
       //Serial.print(i); Serial.println(" touched of A");
+      //Serial.println(currtouchedA);
       // set the array value to 1 on touch
       ElectrodeTouchedA[i] = 1;
       if (USE_NOTE_ON_OFF){
@@ -429,11 +380,11 @@ void rainbow() {
 
 void triggerMidiA(int i){
    usbMIDI.sendControlChange(controlNumA[i], controlValA[i], channel); //(control#, controlval, channel)
-   Serial.print("triggered midi on: A ");
-   Serial.println(i);
+   //Serial.print("triggered midi on: A ");
+   //Serial.println(i);
 }
 void triggerMidiB(int i){
    usbMIDI.sendControlChange(controlNumB[i], controlValB[i], channel); //(control#, controlval, channel)
-   Serial.print("triggered midi on: B ");
-   Serial.println(i);
+   //Serial.print("triggered midi on: B ");
+   //Serial.println(i);
 }
