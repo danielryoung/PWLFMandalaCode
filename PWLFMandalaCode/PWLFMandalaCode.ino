@@ -114,7 +114,7 @@ Ticker ledFrameTimer(ledFrameLoop, 1000/FRAMES_PER_SECOND, 0, MILLIS);
 Ticker ambientLEDs(startAmbient, AMBIENT_DELAY, 0 , MILLIS);
 Ticker PiezoEffect(stopPiezo, 1000, 0 , MILLIS);
 
-#define MPR121_TOUCH_THRESHOLD_DEFAULT 20  ///< default touch threshold value (was 12)
+#define MPR121_TOUCH_THRESHOLD_DEFAULT 12  ///< default touch threshold value (was 12)
 #define MPR121_RELEASE_THRESHOLD_DEFAULT 6 ///< default relese threshold value (was 6)
 // You can have up to 4 on one i2c bus but one is enough for testing!
 Adafruit_MPR121 capA = Adafruit_MPR121();
@@ -135,7 +135,8 @@ uint8_t ElectrodeTouchedA[numElectrodes] = {0,0,0,0,0,0,0,0,0,0,0,0};
 uint8_t ElectrodeTouchedB[numElectrodes] = {0,0,0,0,0,0,0,0,0,0,0,0};
 
 //old MIDI output notes ?? can  delete?
-const uint8_t notes[numElectrodes] = {36, 38, 40, 43, 45, 47, 48, 50, 52, 55, 57, 60}; //added by drc
+const uint8_t notesA[numElectrodes] = {36, 38, 40, 43, 45, 47, 48, 50, 52, 55, 57, 60}; //added by drc
+const uint8_t notesB[numElectrodes] = {37, 39, 41, 42, 46, 49, 51, 53, 54, 56, 58, 59}; //added by dry
 
 
 void setup() {
@@ -156,11 +157,11 @@ void setup() {
   }
   Serial.println("MPR121 found!");
   
-  if (!capB.begin(0x5B)) {
-    Serial.println("MPR121 0x5B not found, check wiring?");
-   while (1);
-  }
-  Serial.println("MPR121 0x5B found!");
+  //if (!capB.begin(0x5B)) {
+   // Serial.println("MPR121 0x5B not found, check wiring?");
+  // while (1);
+  //}
+  //Serial.println("MPR121 0x5B found!");
 
   //from drum code.  not sure if its even necessary
   while (!Serial && millis() < 2500) /* wait for serial monitor */ ;
@@ -225,27 +226,26 @@ while (usbMIDI.read()) { } // ignore incoming messages??
         state[x] = 0; // go back to idle after 30 ms below threshold
       }
     }
-  // key repeat timer
+    // key repeat timer
 
 
-   // if (USE_CC_TIMER) {
-   // repeatTimer.update();
-  //}
+    // if (USE_CC_TIMER) {
+    // repeatTimer.update();
+    //}
 
-  // led frame render timer
-  ledFrameTimer.update();
+    // led frame render timer
+    ledFrameTimer.update();
 
-  // turn on ambient LEDs timer
-  ambientLEDs.update();
-  FastLED.show(); 
-  PiezoEffect.update();
+    // turn on ambient LEDs timer
+    ambientLEDs.update();
+    FastLED.show(); 
+    PiezoEffect.update();
 
-} 
+  } 
 
   // Get the currently touched pads
   currtouchedA = capA.touched();
-  currtouchedB = 0;
-  //capB.touched();
+  currtouchedB = capB.touched();
 
   if (USE_CC_TIMER) {
     repeatTimer.update();
@@ -264,7 +264,7 @@ void checkElectrodes(){
       // set the array value to 1 on touch
       ElectrodeTouchedA[i] = 1;
       if (USE_NOTE_ON_OFF){
-        usbMIDI.sendNoteOn(notes[i], 127, channel); // note, velocity, channel
+        usbMIDI.sendNoteOn(notesA[i], 127, channel); // note, velocity, channel
       }
       // on touch, turn off ambient leds and turn on trigger_leds
       ambient_leds = false;
@@ -279,7 +279,7 @@ void checkElectrodes(){
       // set it back to 0 on release
       ElectrodeTouchedA[i] = 0;  
       if (USE_NOTE_ON_OFF){
-        usbMIDI.sendNoteOff(notes[i], 127, channel); // note, velocity, channel
+        usbMIDI.sendNoteOff(notesA[i], 127, channel); // note, velocity, channel
       }
       trigger_leds = false;
       ambient_leds = false;
@@ -297,7 +297,9 @@ void checkElectrodes(){
       //Serial.print(i); Serial.println(" touched of B");
       // set the array value to 1 on touch
       ElectrodeTouchedB[i] = 1;
-
+      if (USE_NOTE_ON_OFF){
+        usbMIDI.sendNoteOff(notesB[i], 127, channel); // note, velocity, channel
+      }
       // on touch, turn off ambient leds and turn on trigger_leds
       ambient_leds = false;
       trigger_leds = true;
@@ -310,7 +312,9 @@ void checkElectrodes(){
       //Serial.print(i); Serial.println(" released of B");
       // set it back to 0 on release
       ElectrodeTouchedB[i] = 0;  
-
+      if (USE_NOTE_ON_OFF){
+        usbMIDI.sendNoteOff(notesB[i], 127, channel); // note, velocity, channel
+      }
       trigger_leds = false;
       ambient_leds = false;
       ambientLEDs.start();  
@@ -382,7 +386,8 @@ void ledFrameLoop(){
       //Serial.println("ambient mode");
     }
     // also added this sin8 that I think slows it a bit and makes it bounce, remove sin38 and it should not bounce?
-    sin8(gHue) /2 ;
+    // this wasnt doing anything:
+    //sin8(gHue) /2 ;
     fill_palette(leds, NUM_LEDS, gHue, 15, currentPalette,50, LINEARBLEND );
    
   }
