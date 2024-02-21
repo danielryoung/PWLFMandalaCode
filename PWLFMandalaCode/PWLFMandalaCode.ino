@@ -157,7 +157,7 @@ void setup() {
   }
   Serial.println("MPR121 0x5A found!");
   
-  if (!capB.begin(0x5B)) {
+ if (!capB.begin(0x5B)) {
     Serial.println("MPR121 0x5B not found, check wiring?");
    while (1);
   }
@@ -249,7 +249,7 @@ void checkElectrodes(){
       // set the array value to 1 on touch
       ElectrodeTouchedB[i] = 1;
       if (USE_NOTE_ON_OFF){
-        usbMIDI.sendNoteOff(notesB[i], 127, channel); // note, velocity, channel
+        usbMIDI.sendNoteOn(notesB[i], 127, channel); // note, velocity, channel
       }
       // on touch, turn off ambient leds and turn on trigger_leds
       ambient_leds = false;
