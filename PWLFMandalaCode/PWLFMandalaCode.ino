@@ -454,7 +454,7 @@ uint8_t calculateBrightness(uint32_t distance) {
 
     if (bright > MAX_BRIGHTNESS) bright = MAX_BRIGHTNESS;
 
-    if (distance < 120) {
+    if (distance < 200) {
       return (uint8_t)bright;
 
     //(SCALE_FACTOR / (distance + 100));  // +100 prevents extreme values
@@ -545,6 +545,7 @@ void checkElectrodes(){
         usbMIDI.sendNoteOn(notesA[i], 127, channel); // note, velocity, channel
       }
       // on touch, turn off ambient leds and turn on trigger_leds
+      touched_pad = i; 
       ambient_leds = false;
       trigger_leds = true;
       // assigns palette back to black for fade in later.
@@ -580,8 +581,8 @@ void checkElectrodes(){
       }
       // this should be offset by the max pin from the A set.
       //  if we have 19 active pins then the one last touched from this group should be group 1 plus i
-      touched_pad = 10 + i;      // on touch, turn off ambient leds and turn on trigger_leds
-			      ambient_leds = false;
+      touched_pad = (10 + i);      // on touch, turn off ambient leds and turn on trigger_leds
+			ambient_leds = false;
       trigger_leds = true;
             // assigns palette back to black for fade in later.
       currentPalette = black_palette;
@@ -727,8 +728,8 @@ void bpm(){
     uint16_t distance = calculateDistanceSquared(padCoords[touched_pad], LEDcoordinates[i]);
 
     // uint8_t bright_scale = calculateBrightness(distance);
- //   Serial.print("pbrt: ");
- //   Serial.println(bright_scale);
+    Serial.print("pad: ");
+    Serial.println(touched_pad);
    //Serial.print("distance: ");
    //Serial.println(calculateBrightness(distance));
     //Serial.print("scale: ");
