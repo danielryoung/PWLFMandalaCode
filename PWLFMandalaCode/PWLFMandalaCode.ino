@@ -407,13 +407,6 @@ uint8_t calculateGroup(uint8_t elementNumber) {
   return (elementNumber * NUM_GROUPS / ELEMENTS_PER_ARRAY) + 1;
 }
 
-
-uint16_t get_distance(PadLocation pad, CoordinatePair led){
-
-uint16_t  d = sqrt( ((pad.x - led.x)^2) + ((led.y - pad.y)^2));
-  return d;
-}
-
 void setup() {
 
   Wire.begin(0x5A); //added by drc
@@ -587,29 +580,6 @@ void stopPiezo(){
   trigger_leds = false;
 }
 
-// Optional: Variant that also returns the LED index that was lit
-uint8_t lightClosestLEDWithIndex(CRGB* leds,  uint16_t numLeds, PadLocation padCoords, CRGB color = CRGB::White){
-
-    // Find the closest LED
-    uint16_t closestLed = 0;
-    uint32_t minDistance = 0xFFFFFFFF;
-
-    for(uint16_t i = 0; i < numLeds; i++) {
-        uint32_t distance = calculateDistanceSquared(
-            padCoords,
-            LEDcoordinates[i]
-        );
-
-        if(distance < minDistance) {
-            minDistance = distance;
-            closestLed = i;
-        }
-    }
-
-    // Light only the closest LED
-    leds[closestLed] = color;
-    return closestLed;
-}
 
 void ledFrameLoop(){
   // calls bpm from DEMO REEL 100
@@ -655,28 +625,30 @@ uint16_t calculateDistanceSquared(PadLocation pad, CoordinatePair led) {
     uint16_t dx = (pad.x > led.x) ? (pad.x  - led.x) : (led.x - pad.x );
     uint16_t dy = (pad.y > led.y) ? (pad.y - led.y) : (led.y - pad.y);
     uint32_t dist = sqrt((dx * dx) + (dy * dy));
-    if (led.index == 1){
-      Serial.print("index:");
-      Serial.print(led.index);
-      Serial.print("padcoord:");
-      Serial.print(pad.x);
-      Serial.print(",");
-      Serial.print(pad.y);
-      Serial.print(": distance: ");
-
-      Serial.println(calculateBrightness(dist));
-
-    }
+//    if (led.index == 1){
+//      Serial.print("index:");
+//      Serial.print(led.index);
+//      Serial.print("padcoord:");
+//      Serial.print(pad.x);
+//      Serial.print(",");
+//      Serial.print(pad.y);
+//      Serial.print(": distance: ");
+//
+//      Serial.println(calculateBrightness(dist));
+//
+//    }
     // Square and add
     return dist;
 }
 
-// Function to map distance to brightness (0-255, where 255 is brightest)
 uint8_t calculateBrightness(uint32_t distance) {
+    
+    // Function to map distance to brightness (0-255, where 255 is brightest)
+    
     // Adjust these constants to control the brightness falloff
     const uint8_t MAX_BRIGHTNESS = 240;
     const uint8_t MIN_BRIGHTNESS = 2;
-    //const uint32_t SCALE_FACTOR = 700;  // Adjust this to control how quickly brightness falls off
+
     static uint16_t max_dist = 10;
     max_dist = distance > max_dist ? distance : max_dist;
 
@@ -695,54 +667,35 @@ uint8_t calculateBrightness(uint32_t distance) {
 void bpm(){
   // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
   //uint8_t BeatsPerMinute = 6; //was 18
-  CRGBPalette16 palette = custom_palette_2;
+    CRGBPalette16 palette = custom_palette_2;
 
-  //const pal
-	//uint8_t index
-	//uint8_t brightness
-	//TBlendType blendType = LINEARBLEND
-
-  /// you could probaby give a really quick ramp here with
-
-  //nblendPaletteTowardPalette(currentPalette, palette, 100);
- // Serial.print("pad: ");
-   ////Serial.println(touched_pad);
-
-  //uint8_t beat = beatsin8( BeatsPerMinute, 18, 255,0,1);
-  for( int i = 0; i < NUM_LEDS; i++) { //9948
-
-      //the third index argument (gHue + i*2) is determining the index along the palette 0-254 through the range.
-      // so slowing down would probably be remove that *2 ?
-
-      //.so changing the formula here with gHue always incrementing 0-255 can control how fast the colors scan through the palette
-
-    uint16_t distance = calculateDistanceSquared(padCoords[touched_pad], LEDcoordinates[i]);
-
-    // uint8_t bright_scale = calculateBrightness(distance);
-    Serial.print("pad: ");
-    Serial.println(touched_pad);
-   //Serial.print("distance: ");
-   //Serial.println(calculateBrightness(distance));
-    //Serial.print("scale: ");
-    //Serial.println(beat-gHue+(i));
-    //if (distance < 2) {
-
-    // if we get a zero from calc brightness, then we will map the existing brightness back to the led.  
-    // this will fade over time as it gets fades toward black. the idea is to keep the leds on recently touched pads from blinking out.
-  if (distance < 200) {
-      uint8_t brightness_value = calculateBrightness(distance);
-      //? calculateBrightness(distance) : leds[i].getLuma() ;
-      Serial.print("brt: ");
-      Serial.println(brightness_value);
-      leds[i] = ColorFromPalette(palette, gHue+(i*6), brightness_value);  //was gHue+(i*6)
-   }
-  // else 
-   //if(leds[i].getLuma() >= 10 ) 
-   //{
-   // uint8_t curr_bright = leds[i].getLuma();
-   // leds[i] = ColorFromPalette(palette, gHue+(i*6), curr_bright);
-   //}
-  }
+    for( int i = 0; i < NUM_LEDS; i++) { //9948  
+        
+        uint16_t distance = calculateDistanceSquared(padCoords[touched_pad], LEDcoordinates[i]);
+    
+        // uint8_t bright_scale = calculateBrightness(distance);
+        //Serial.print("pad: ");
+        //Serial.println(touched_pad);
+        //Serial.print("distance: ");
+        //Serial.println(calculateBrightness(distance));
+        //Serial.print("scale: ");
+        //Serial.println(beat-gHue+(i));
+    
+        // if we get a zero from calc brightness, then we will map the existing brightness back to the led.  
+        // this will fade over time as it gets fades toward black. the idea is to keep the leds on recently touched pads from blinking out.
+        
+        if (distance < 200) {
+            uint8_t brightness_value = calculateBrightness(distance);
+      
+            //Serial.print("brt: ");
+            //Serial.println(brightness_value);
+            
+            //the third index argument (gHue + i*2) is determining the index along the palette 0-254 through the range.
+            // so slowing down would probably be remove that *2 ?
+            //.so changing the formula here with gHue always incrementing 0-255 can control how fast the colors scan through the palett
+            leds[i] = ColorFromPalette(palette, gHue+(i*6), brightness_value);  //was gHue+(i*6)
+        }
+    }
 }
 
 void rainbow() {
