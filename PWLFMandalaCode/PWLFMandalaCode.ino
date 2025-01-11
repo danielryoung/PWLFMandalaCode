@@ -414,58 +414,6 @@ uint16_t  d = sqrt( ((pad.x - led.x)^2) + ((led.y - pad.y)^2));
   return d;
 }
 
-// Function to calculate squared Euclidean distance between two points (integer only)
-uint16_t calculateDistanceSquared(PadLocation pad, CoordinatePair led) {
-    // Calculate absolute differences to ensure no negative intermediate values
-    uint16_t dx = (pad.x > led.x) ? (pad.x  - led.x) : (led.x - pad.x );
-    uint16_t dy = (pad.y > led.y) ? (pad.y - led.y) : (led.y - pad.y);
-    uint32_t dist = sqrt((dx * dx) + (dy * dy));
-    if (led.index == 1){
-      Serial.print("index:");
-      Serial.print(led.index);
-      Serial.print("padcoord:");
-      Serial.print(pad.x);
-      Serial.print(",");
-      Serial.print(pad.y);
-      Serial.print(": distance: ");
-
-      Serial.println(calculateBrightness(dist));
-
-    }
-    // Square and add
-    return dist;
-}
-
-// Function to map distance to brightness (0-255, where 255 is brightest)
-uint8_t calculateBrightness(uint32_t distance) {
-    // Adjust these constants to control the brightness falloff
-    const uint8_t MAX_BRIGHTNESS = 240;
-    const uint8_t MIN_BRIGHTNESS = 2;
-    const uint32_t SCALE_FACTOR = 700;  // Adjust this to control how quickly brightness falls off
-    static uint16_t max_dist = 10;
-    max_dist = distance > max_dist ? distance : max_dist;
-
-    // Avoid division by zero
-    if (distance == 0) return MAX_BRIGHTNESS;
-
-    // Calculate inverse square relationship
-    // The larger the distance, the smaller the brightness
-    uint8_t bright =  pow( sin8(map(distance, 0, max_dist, MIN_BRIGHTNESS, MAX_BRIGHTNESS)) ,2);
-
-    if (bright > MAX_BRIGHTNESS) bright = MAX_BRIGHTNESS;
-
-    if (distance < 200) {
-      return (uint8_t)bright;
-
-    //(SCALE_FACTOR / (distance + 100));  // +100 prevents extreme values
-    }
-    else {return 0;}
-    // Clamp to valid brightness range
-
-    //Serial.println(bright);
-
-}
-
 void setup() {
 
   Wire.begin(0x5A); //added by drc
@@ -701,9 +649,52 @@ void ledFrameLoop(){
 
 }
 
+// Function to calculate squared Euclidean distance between two points (integer only)
+uint16_t calculateDistanceSquared(PadLocation pad, CoordinatePair led) {
+    // Calculate absolute differences to ensure no negative intermediate values
+    uint16_t dx = (pad.x > led.x) ? (pad.x  - led.x) : (led.x - pad.x );
+    uint16_t dy = (pad.y > led.y) ? (pad.y - led.y) : (led.y - pad.y);
+    uint32_t dist = sqrt((dx * dx) + (dy * dy));
+    if (led.index == 1){
+      Serial.print("index:");
+      Serial.print(led.index);
+      Serial.print("padcoord:");
+      Serial.print(pad.x);
+      Serial.print(",");
+      Serial.print(pad.y);
+      Serial.print(": distance: ");
+
+      Serial.println(calculateBrightness(dist));
+
+    }
+    // Square and add
+    return dist;
+}
+
+// Function to map distance to brightness (0-255, where 255 is brightest)
+uint8_t calculateBrightness(uint32_t distance) {
+    // Adjust these constants to control the brightness falloff
+    const uint8_t MAX_BRIGHTNESS = 240;
+    const uint8_t MIN_BRIGHTNESS = 2;
+    //const uint32_t SCALE_FACTOR = 700;  // Adjust this to control how quickly brightness falls off
+    static uint16_t max_dist = 10;
+    max_dist = distance > max_dist ? distance : max_dist;
+
+    // Avoid division by zero
+    if (distance == 0) return MAX_BRIGHTNESS;
+
+    // Calculate inverse square relationship
+    // The larger the distance, the smaller the brightness
+    uint8_t bright =  pow( sin8(map(distance, 0, max_dist, MIN_BRIGHTNESS, MAX_BRIGHTNESS)) ,2);
+
+    if (bright > MAX_BRIGHTNESS) bright = MAX_BRIGHTNESS;
+    
+    return (uint8_t)bright;
+}
+
 void bpm(){
   // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
-  uint8_t BeatsPerMinute = 6; //was 18
+  //uint8_t BeatsPerMinute = 6; //was 18
   CRGBPalette16 palette = custom_palette_2;
 
   //const pal
@@ -717,7 +708,7 @@ void bpm(){
  // Serial.print("pad: ");
    ////Serial.println(touched_pad);
 
-  uint8_t beat = beatsin8( BeatsPerMinute, 18, 255,0,1);
+  //uint8_t beat = beatsin8( BeatsPerMinute, 18, 255,0,1);
   for( int i = 0; i < NUM_LEDS; i++) { //9948
 
       //the third index argument (gHue + i*2) is determining the index along the palette 0-254 through the range.
@@ -735,8 +726,22 @@ void bpm(){
     //Serial.print("scale: ");
     //Serial.println(beat-gHue+(i));
     //if (distance < 2) {
-      leds[i] = ColorFromPalette(palette, gHue+(i*6), calculateBrightness(distance));  //was gHue+(i*6)
-    //}
+
+    // if we get a zero from calc brightness, then we will map the existing brightness back to the led.  
+    // this will fade over time as it gets fades toward black. the idea is to keep the leds on recently touched pads from blinking out.
+  if (distance < 200) {
+      uint8_t brightness_value = calculateBrightness(distance);
+      //? calculateBrightness(distance) : leds[i].getLuma() ;
+      Serial.print("brt: ");
+      Serial.println(brightness_value);
+      leds[i] = ColorFromPalette(palette, gHue+(i*6), brightness_value);  //was gHue+(i*6)
+   }
+  // else 
+   //if(leds[i].getLuma() >= 10 ) 
+   //{
+   // uint8_t curr_bright = leds[i].getLuma();
+   // leds[i] = ColorFromPalette(palette, gHue+(i*6), curr_bright);
+   //}
   }
 }
 
